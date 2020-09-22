@@ -1,0 +1,19 @@
+import pandas as pd
+dfPOST = pd.read_pickle('2000355193_y2019_unique_post_rawdata.pkl')
+from fuzzywuzzy import process, fuzz
+
+df1 = dfPOST[['resourceId', 'text']].head(3000)
+df1_text = df1['text']
+#remove hashtag
+df1_text.replace('#', '')
+df1_text = list(df1_text.values)
+#fuzzy matching
+score_sort = [(x, y ) + i
+              for x, y in df1.itertuples(index=False)
+              for i in process.extract(x, df1_text, scorer=fuzz.ratio)]
+similarity_sort = pd.DataFrame(score_sort, columns=['resourceId', 'text_sort', 'match_sort', 'score'])
+#sort score greater than equal to 90
+high_score_sort = similarity_sort[(similarity_sort['score'] >= 90)]
+high_score_sort.sort_values(by=['score'], ascending=False)
+high_score_sort.to_excel("text_score_2000")
+
