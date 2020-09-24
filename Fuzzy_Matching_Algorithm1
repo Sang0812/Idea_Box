@@ -1,0 +1,25 @@
+import pandas as pd
+from fuzzywuzzy import process, fuzz
+import re
+
+dfPOST = pd.read_pickle('2000355193_y2019_unique_post_rawdata.pkl')
+df1 = dfPOST[['resourceId', 'text']].head(1000)
+df1['text'] = df1['text'].apply(lambda x: re.sub('#[^\s]+','',x))
+df1['text'] = df1['text'].apply(lambda x: x.replace('.', ''))
+df1['text'] = df1['text'].apply(lambda x: x.encode('ascii', 'ignore').decode('ascii'))
+df1['text'] = df1['text'].apply(lambda x: x.strip())
+df1 = df1[df1['text']!='']
+df1.dropna()
+
+df1_text = df1['text']
+df1_text = list(df1_text.values)
+
+#fuzzy match
+score_sort = [(y, z) + i
+              for y, z in df1.itertuples(index=False)
+              for i in process.extract(z, df1_text, scorer=fuzz.ratio)]
+similarity_sort = pd.DataFrame(score_sort, columns=['resourceId', 'text_sort', 'match_sort', 'score'])
+
+#sort score
+high_score_sort = similarity_sort[(similarity_sort['score'] >= 90)]
+high_score_sort.sort_values(by=['score'], ascending=False)
